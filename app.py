@@ -2,11 +2,13 @@ from flask import Flask, redirect, url_for, session, request
 from flask_oauthlib.client import OAuth, OAuthException
 import requests
 import json
+import uuid
 
+from tree import Node, lookup_node
+from decorators import save, load, mutator
 
 SPOTIFY_APP_ID = '0ea32eb43e5c4e4c8eed99d75a73a7d3'
 SPOTIFY_APP_SECRET = '779ac802603542fd839d0be55fac6ac3'
-
 
 app = Flask(__name__)
 app.debug = True
@@ -44,6 +46,10 @@ def get_auth_header():
     headers = {'Authorization': auth_header}
     return headers
 
+@spotify.tokengetter
+def get_spotify_oauth_token():
+    return session.get('oauth_token')
+
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -51,44 +57,75 @@ def index():
 @app.route('/login')
 def login():
     callback = url_for(
-        'spotify_authorized',
+        'reset',
         next=request.args.get('next') or request.referrer or None,
         _external=True
     )
-    print(callback)
     return spotify.authorize(callback=callback)
 
 @app.route('/login/authorized')
-def spotify_authorized():
+@save
+def reset():
     headers = get_auth_header()
+    root = Node('All songs')
+ 
+    r_playlists = requests.get('https://api.spotify.com/v1/me/playlists', headers=headers)
+    playlists = r_playlists.json()['items']
 
-    r_devices = requests.get('https://api.spotify.com/v1/me/player/devices', headers=headers)
-    devices = r_devices.json()['devices']
-    if len(devices) == 0:
-        return 'no devices found'
-    device_selected = None
-    for device in devices:
-        if 'iPhone' in device['name']:
-            print(device)
-            device_selected = device['id']
-    if device_selected == None:
-        return 'no iphone found'
-    data = json.dumps({'device_ids': [device_selected], 'play': False})
-    r_transfer = requests.put('https://api.spotify.com/v1/me/player', data=data, headers=headers)
+    for playlist in playlists:
+        r_tracks = requests.get(playlist['tracks']['href'], headers=headers)
+        tracks = r_tracks.json()['items']
+        track_uris = []
+        for track in tracks:
+            track_uris.append(track['track']['uri'])
+        new_node = Node(name=playlist['name'], parent=root, tracks=track_uris)
 
-    #r_playlists = requests.get('https://api.spotify.com/v1/me/playlists', headers=headers)
-    #print(r_playlists.json())
-    r_shuffle = requests.put('https://api.spotify.com/v1/me/player/shuffle?state=true', headers=headers)
-    print(r_shuffle.status_code)
-    playlist = 'spotify:user:12148607014:playlist:3EW4zuXYer9GSVkXn4ttsy'
-    play_data = json.dumps({'context_uri': playlist})
-    r_play = requests.put('https://api.spotify.com/v1/me/player/play', data=play_data, headers=headers)
-    print(r_play.status_code)
-    return "success"
+    return root
 
-@spotify.tokengetter
-def get_spotify_oauth_token():
-    return session.get('oauth_token')
+@app.route('/nodes/<uuid>')
+@load
+def get_node(root, uuid):
+    return json.dumps(lookup_node(root, uuid).to_dict())
+
+@app.route('/nodes')
+@load
+def get_root(root):
+    return json.dumps(root.to_dict())
+
+@app.route('/nodes/<parent_uuid>', methods=['POST'])
+@mutator
+def create_node(root, parent_uuid):
+    name = request.json['name']
+    parent = lookup_node(root, parent_uuid)
+    if parent is None:
+        return 'Parent not found', 400
+    Node(name=name, parent=parent)
+    return root
+
+@app.route('/nodes/<uuid>', methods=['DELETE'])
+@mutator
+def delete_node(root, uuid):
+    node = lookup_node(root, uuid)
+    if node.parent is None:
+        return 'Unable to delete root node', 400
+    node.parent.children.remove(node)
+    return root
+
+@app.route('/nodes/<uuid>/tracks', methods=['POST'])
+@mutator
+def add_track(root, uuid):
+    track_id = request.json['track_id']
+    node = lookup_node(root, uuid)
+    node.tracks.append(track_id)
+    return root
+
+@app.route('/nodes/<uuid>/tracks', methods=['DELETE'])
+@mutator
+def remove_track(root, uuid):
+    track_id = request.json['track_id']
+    node = lookup_node(root, uuid)
+    node.tracks.remove(track_id)
+    return root
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
