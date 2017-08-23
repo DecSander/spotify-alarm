@@ -31,44 +31,35 @@ spotify = oauth.remote_app(
     authorize_url='https://accounts.spotify.com/authorize'
 )
 
-def get_auth_header():
-    resp = spotify.authorized_response()
-    if resp is None:
-        return 'Access denied: reason={0} error={1}'.format(
-            request.args['error_reason'],
-            request.args['error_description']
-        )
-
-    if isinstance(resp, OAuthException):
-        return 'Access denied: {0}'.format(resp.message)
-
-    session['oauth_token'] = (resp['access_token'], '')
-    token = resp['access_token']
-    auth_header = resp['token_type'] + ' ' + resp['access_token']
-    headers = {'Authorization': auth_header}
-    return headers
-
-@spotify.tokengetter
-def get_spotify_oauth_token():
-    return session.get('oauth_token')
-
 @app.route('/')
 def index():
-    return redirect(url_for('login'))
+    return 'Hi!'
+
+@spotify.tokengetter
+def get_spotify_token(token=None):
+    return session.get('spotify_token')
 
 @app.route('/login')
 def login():
-    callback = url_for(
-        'reset',
-        next=request.args.get('next') or request.referrer or None,
-        _external=True
-    )
-    return spotify.authorize(callback=callback)
+    return spotify.authorize(callback=url_for('oauth_authorized',
+        next=request.args.get('next') or request.referrer or None, _external=True))
 
 @app.route('/login/authorized')
+@spotify.authorized_handler
+def oauth_authorized(resp):
+    next_url = request.args.get('next') or url_for('index')
+    if resp is None:
+        flash(u'You denied the request to sign in.')
+        return redirect(next_url)
+
+    session['spotify_token'] = resp['token_type'] + ' ' + resp['access_token']
+    return redirect(next_url)
+
+@app.route('/resettree')
 @save
 def reset():
-    headers = get_auth_header()
+    print get_spotify_token()
+    headers = {'Authorization': get_spotify_token()}
     root = Node('All songs')
  
     r_playlists = requests.get('https://api.spotify.com/v1/me/playlists', headers=headers)
