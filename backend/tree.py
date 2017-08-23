@@ -24,6 +24,12 @@ class Node:
             ret += child.get_all_subtracks()
         return ret
 
+    def to_meta_dict(self):
+        return {
+            "name": self.name,
+            "uuid": self.uuid
+        }
+
     def to_tree_dict(self):
         return {
             "name": self.name,
@@ -45,10 +51,10 @@ class Node:
             songs += child.get_songs()
 
         for song in songs:
-            song[1].append(self.uuid)
+            song[1].append(self.to_meta_dict())
 
         for track in self.tracks:
-            songs.append((track.to_dict(), [self.uuid]))
+            songs.append((track.to_dict(), [self.to_meta_dict()]))
 
         return songs
 
