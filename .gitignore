@@ -7,3 +7,4 @@ index.html
 .browserify-cache.json
 bundle.js
 bundle.js.map
+*.pyc
