@@ -77,15 +77,20 @@ def reset():
 
     return root
 
-@app.route('/nodes/<uuid>')
-@load
-def get_node(root, uuid):
-    return json.dumps(lookup_node(root, uuid).to_dict())
-
 @app.route('/nodes')
 @load
 def get_root(root):
-    return json.dumps(root.to_dict())
+    return json.dumps(root.to_tree_dict())
+
+@app.route('/nodes/<uuid>')
+@load
+def get_node(root, uuid):
+    return json.dumps(lookup_node(root, uuid).to_tree_dict())
+
+@app.route('/nodes/<uuid>/songs')
+@load
+def get_songs(root, uuid):
+    return json.dumps(lookup_node(root, uuid).get_songs())
 
 @app.route('/nodes/<parent_uuid>', methods=['POST'])
 @mutator

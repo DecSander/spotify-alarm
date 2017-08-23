@@ -24,6 +24,13 @@ class Node:
             ret += child.get_all_subtracks()
         return ret
 
+    def to_tree_dict(self):
+        return {
+            "name": self.name,
+            "children": [child.to_tree_dict() for child in self.children],
+            "uuid": self.uuid
+        }
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -31,6 +38,19 @@ class Node:
             "tracks": [track.to_dict() for track in self.tracks],
             "uuid": self.uuid
         }
+
+    def get_songs(self):
+        songs = []
+        for child in self.children:
+            songs += child.get_songs()
+
+        for song in songs:
+            song[1].append(self.uuid)
+
+        for track in self.tracks:
+            songs.append((track.to_dict(), [self.uuid]))
+
+        return songs
 
     def __str__(self):
         return "{0} tracks: {1}".format(self.name, self.tracks)
