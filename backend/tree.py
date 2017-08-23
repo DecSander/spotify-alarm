@@ -28,7 +28,7 @@ class Node:
         return {
             "name": self.name,
             "children": [child.to_dict() for child in self.children],
-            "tracks": self.tracks,
+            "tracks": [track.to_dict() for track in self.tracks],
             "uuid": self.uuid
         }
 
@@ -38,12 +38,39 @@ class Node:
     def __eq__(self, other):
         return self.uuid == other.uuid
 
+class Track:
+    name = None
+    artist = None
+    uuid = None
+
+    def __init__(self, name, artist, uuid):
+        self.name = name
+        self.artist = artist
+        self.uuid = uuid
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "artist": self.artist,
+            "uuid": self.uuid
+        }
+
+    def __str__(self):
+        return "{0}".format(self.name)
+
+    def __eq__(self, other):
+        return self.uuid == other.uuid
+
 def save_to_file(node):
     with open('data.json', 'w') as f:
         f.write(json.dumps(node.to_dict()))
 
+def dict_to_track(dct):
+    return Track(name=dct['name'], uuid=dct['uuid'], artist=dct['artist'])
+
 def create_from_dict(dct, parent=None):
-    new_node = Node(name=dct['name'], uuid=dct['uuid'], parent=parent, tracks=dct['tracks'])
+    new_node = Node(name=dct['name'], uuid=dct['uuid'], parent=parent,
+                    tracks=map(dict_to_track, dct['tracks']))
     for child in dct['children']:
         create_from_dict(child, new_node)
     return new_node

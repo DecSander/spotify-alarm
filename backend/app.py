@@ -1,16 +1,18 @@
-from flask import Flask, redirect, url_for, session, request
+#!/usr/bin/python
+
+from flask import Flask, redirect, url_for, session, request, send_from_directory
 from flask_oauthlib.client import OAuth, OAuthException
 import requests
 import json
 import uuid
 
-from tree import Node, lookup_node
+from tree import Node, lookup_node, Track
 from decorators import save, load, mutator
 
 SPOTIFY_APP_ID = '0ea32eb43e5c4e4c8eed99d75a73a7d3'
 SPOTIFY_APP_SECRET = '779ac802603542fd839d0be55fac6ac3'
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 app.debug = True
 app.secret_key = 'development'
 oauth = OAuth(app)
@@ -75,10 +77,12 @@ def reset():
     for playlist in playlists:
         r_tracks = requests.get(playlist['tracks']['href'], headers=headers)
         tracks = r_tracks.json()['items']
-        track_uris = []
+        track_objs = []
         for track in tracks:
-            track_uris.append(track['track']['uri'])
-        new_node = Node(name=playlist['name'], parent=root, tracks=track_uris)
+            track_obj = track['track']
+            new_track = Track(uuid=track_obj['uri'], name=track_obj['name'], artist=track_obj['artists'][0]['name'])
+            track_objs.append(new_track)
+        new_node = Node(name=playlist['name'], parent=root, tracks=track_objs)
 
     return root
 
@@ -126,6 +130,10 @@ def remove_track(root, uuid):
     node = lookup_node(root, uuid)
     node.tracks.remove(track_id)
     return root
+
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('../frontend', path)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

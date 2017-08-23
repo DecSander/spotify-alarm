@@ -1,0 +1,11 @@
+doctype html
+html(lang='en')
+    head
+        include ./compatibility.jade
+        include ./deps.jade
+        link(rel='shortcut icon', href='favicon.ico')
+        title Spotify Player App
+    body
+        noscript Sorry, you need javascript to use the Ground Station!
+        section#react
+        script(src='bundle.js')
