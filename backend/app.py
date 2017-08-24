@@ -58,7 +58,6 @@ def oauth_authorized(resp):
 @app.route('/resettree')
 @save
 def reset():
-    print get_spotify_token()
     headers = {'Authorization': get_spotify_token()}
     root = Node('All songs')
  
@@ -126,6 +125,28 @@ def remove_track(root, uuid):
     node = lookup_node(root, uuid)
     node.tracks.remove(track_id)
     return root
+
+@app.route('/play/track', methods=['PUT'])
+def play_track():
+    headers = {'Authorization': get_spotify_token()}
+    track_id = request.json['track_id']
+
+    r_devices = requests.get('https://api.spotify.com/v1/me/player/devices', headers=headers)
+    devices = r_devices.json()['devices']
+    if len(devices) == 0:
+        return 'no devices found'
+    device_selected = None
+    for device in devices:
+        if 'iPhone' in device['name']:
+            device_selected = device['id']
+    if device_selected == None:
+        return 'no iphone found'
+
+    play_params = {'device_id': device_selected}
+    play_data = json.dumps({'uris': [track_id]})
+    r_play = requests.put('https://api.spotify.com/v1/me/player/play', params=play_params, data=play_data, headers=headers)
+
+    return 'Success'
 
 @app.route('/static/<path:path>')
 def send_static(path):
