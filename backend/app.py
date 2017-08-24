@@ -56,7 +56,7 @@ def oauth_authorized(resp):
     return redirect(next_url)
 
 @app.route('/resettree')
-@save
+@setter
 def reset():
     headers = {'Authorization': get_spotify_token()}
     root = Node('All songs')
@@ -77,17 +77,17 @@ def reset():
     return root
 
 @app.route('/nodes')
-@load
+@getter
 def get_root(root):
     return json.dumps(root.to_tree_dict())
 
 @app.route('/nodes/<uuid>')
-@load
+@getter
 def get_node(root, uuid):
     return json.dumps(lookup_node(root, uuid).to_tree_dict())
 
 @app.route('/nodes/<uuid>/songs')
-@load
+@getter
 def get_songs(root, uuid):
     return json.dumps(lookup_node(root, uuid).get_songs())
 
@@ -141,7 +141,7 @@ def get_iphone(headers):
     return device_selected
 
 @app.route('/play/<uuid>', methods=['PUT'])
-@load
+@getter
 def play_node(root, uuid):
     headers = {'Authorization': get_spotify_token()}
     device_selected = get_iphone(headers)
