@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from functools import wraps
+
 from flask import Flask, redirect, url_for, session, request, send_from_directory
 from flask_oauthlib.client import OAuth, OAuthException
 import requests
@@ -55,10 +57,21 @@ def oauth_authorized(resp):
     session['spotify_token'] = resp['token_type'] + ' ' + resp['access_token']
     return redirect(next_url)
 
+def spotify_auth(f):
+    @wraps
+    def decorated_function(*args, **kwargs):
+        spotify_token = get_spotify_token()
+        if spotify_token is None:
+            raise Exception('error getting spotify token')
+        kwargs['spotify_token'] = spotify_token
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/resettree')
+@spotify_auth
 @setter
-def reset():
-    headers = {'Authorization': get_spotify_token()}
+def reset(spotify_token):
+    headers = {'Authorization': spotify_token}
     root = Node('All songs')
  
     r_playlists = requests.get('https://api.spotify.com/v1/me/playlists', headers=headers)
@@ -142,8 +155,9 @@ def get_iphone(headers):
 
 @app.route('/play/<uuid>', methods=['PUT'])
 @getter
-def play_node(root, uuid):
-    headers = {'Authorization': get_spotify_token()}
+@spotify_auth
+def play_node(spotify_token, root, uuid):
+    headers = {'Authorization': spotify_token}
     device_selected = get_iphone(headers)
 
     track_ids = []
