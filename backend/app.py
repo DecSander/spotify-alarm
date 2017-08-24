@@ -140,17 +140,6 @@ def get_iphone(headers):
 
     return device_selected
 
-@app.route('/play/track', methods=['PUT'])
-def play_track():
-    headers = {'Authorization': get_spotify_token()}
-    track_id = request.json['track_id']
-    device_selected = get_iphone(headers)
-    play_params = {'device_id': device_selected}
-    play_data = json.dumps({'uris': [track_id]})
-    r_play = requests.put('https://api.spotify.com/v1/me/player/play', params=play_params, data=play_data, headers=headers)
-
-    return 'Success'
-
 @app.route('/play/<uuid>', methods=['PUT'])
 @load
 def play_node(root, uuid):
@@ -158,17 +147,24 @@ def play_node(root, uuid):
     device_selected = get_iphone(headers)
 
     track_ids = []
+    play_data_dict = {'uris': track_ids}
+    if request.json is not None and 'start_with' in request.json:
+        #TODO: consider what should be done when start_with is a song that is not in the given node
+        track_ids.append(request.json['start_with'])
+        play_data_dict['offset'] = {'position': 0}
+
     songs = lookup_node(root, uuid).get_songs()
     for song in songs:
         track_ids.append(song[0]['uuid'])
 
         #TODO: there appears to be some limit to the number of songs that can be sent at once.
         #No error is thrown, this just results in a NOP
+        #This needs to be handled better when in shuffle mode
         if len(track_ids) >= 300:
             break
 
     play_params = {'device_id': device_selected}
-    play_data = json.dumps({'uris': track_ids})
+    play_data = json.dumps(play_data_dict)
     r_play = requests.put('https://api.spotify.com/v1/me/player/play', params=play_params, data=play_data, headers=headers)
 
     return 'Success'
