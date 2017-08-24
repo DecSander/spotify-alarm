@@ -9,7 +9,7 @@ import json
 import uuid
 
 from tree import Node, lookup_node, Track
-from decorators import save, load, mutator
+from decorators import getter, setter, mutator
 
 SPOTIFY_APP_ID = '0ea32eb43e5c4e4c8eed99d75a73a7d3'
 SPOTIFY_APP_SECRET = '779ac802603542fd839d0be55fac6ac3'
@@ -58,7 +58,7 @@ def oauth_authorized(resp):
     return redirect(next_url)
 
 def spotify_auth(f):
-    @wraps
+    @wraps(f)
     def decorated_function(*args, **kwargs):
         spotify_token = get_spotify_token()
         if spotify_token is None:
@@ -152,6 +152,22 @@ def get_iphone(headers):
         raise Exception('no iphone found')
 
     return device_selected
+
+@app.route('/player', methods=['PUT'])
+@spotify_auth
+def adjust_player_settings(spotify_token):
+    headers = {'Authorization': spotify_token}
+
+    if 'playing' in request.json:
+        if request.json['playing']:
+            requests.put('https://api.spotify.com/v1/me/player/play', headers=headers)
+        else:
+            requests.put('https://api.spotify.com/v1/me/player/pause', headers=headers)
+
+    if 'shuffle' in request.json:
+        requests.put('https://api.spotify.com/v1/me/player/shuffle', params={'state': request.json['shuffle']}, headers=headers)
+
+    return 'Success'
 
 @app.route('/play/<uuid>', methods=['PUT'])
 @getter
