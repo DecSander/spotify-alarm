@@ -126,24 +126,49 @@ def remove_track(root, uuid):
     node.tracks.remove(track_id)
     return root
 
-@app.route('/play/track', methods=['PUT'])
-def play_track():
-    headers = {'Authorization': get_spotify_token()}
-    track_id = request.json['track_id']
-
+def get_iphone(headers):
     r_devices = requests.get('https://api.spotify.com/v1/me/player/devices', headers=headers)
     devices = r_devices.json()['devices']
     if len(devices) == 0:
-        return 'no devices found'
+        raise Exception('no devices found')
     device_selected = None
     for device in devices:
         if 'iPhone' in device['name']:
             device_selected = device['id']
     if device_selected == None:
-        return 'no iphone found'
+        raise Exception('no iphone found')
 
+    return device_selected
+
+@app.route('/play/track', methods=['PUT'])
+def play_track():
+    headers = {'Authorization': get_spotify_token()}
+    track_id = request.json['track_id']
+    device_selected = get_iphone(headers)
     play_params = {'device_id': device_selected}
     play_data = json.dumps({'uris': [track_id]})
+    r_play = requests.put('https://api.spotify.com/v1/me/player/play', params=play_params, data=play_data, headers=headers)
+
+    return 'Success'
+
+@app.route('/play/<uuid>', methods=['PUT'])
+@load
+def play_node(root, uuid):
+    headers = {'Authorization': get_spotify_token()}
+    device_selected = get_iphone(headers)
+
+    track_ids = []
+    songs = lookup_node(root, uuid).get_songs()
+    for song in songs:
+        track_ids.append(song[0]['uuid'])
+
+        #TODO: there appears to be some limit to the number of songs that can be sent at once.
+        #No error is thrown, this just results in a NOP
+        if len(track_ids) >= 300:
+            break
+
+    play_params = {'device_id': device_selected}
+    play_data = json.dumps({'uris': track_ids})
     r_play = requests.put('https://api.spotify.com/v1/me/player/play', params=play_params, data=play_data, headers=headers)
 
     return 'Success'
