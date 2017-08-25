@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Table,
   TableBody,
-  TableFooter,
   TableHeader,
   TableHeaderColumn,
   TableRow,
@@ -11,6 +10,8 @@ import {
 import autobind from 'react-autobind';
 import PlayButton from 'material-ui/svg-icons/av/play-circle-filled';
 import IconButton from 'material-ui/IconButton';
+import Chip from 'material-ui/Chip';
+import { blue300 } from 'material-ui/styles/colors';
 
 class SongsSection extends React.Component {
 
@@ -26,9 +27,8 @@ class SongsSection extends React.Component {
   }
 
   getTracks() {
-    fetch('/nodes')
+    fetch('/nodes/d64532c052644af891c4c2390680d5ca/songs')
       .then(res => res.json())
-      .then(out => out.children[0].tracks)
       .then(tracks => this.setState({tracks}))
       .catch(console.error)
   }
@@ -39,12 +39,38 @@ class SongsSection extends React.Component {
     }).catch(console.error);
   }
 
+  buildChip(tag) {
+    const { name } = tag;
+    const chipStyle = {
+      margin: 4
+    };
+
+    return (
+      <Chip style={chipStyle} backgroundColor={blue300} onClick={() => {}}>
+        {name}
+      </Chip>
+    );
+  }
+
+  buildPlayButton(metadata) {
+    const { uuid } = metadata;
+    return (
+      <IconButton onClick={this.setPlay.bind(this, uuid)}>
+        <PlayButton />
+      </IconButton>
+    );
+  }
+
   jsonToTableEntry(obj) {
+    const [metadata, tags] = obj;
+    const { name, artist } = metadata;
+
     return (
       <TableRow>
-        <TableRowColumn><IconButton onClick={this.setPlay.bind(this, obj.uuid)}><PlayButton /></IconButton></TableRowColumn>
-        <TableRowColumn>{obj.name}</TableRowColumn>
-        <TableRowColumn>{obj.artist}</TableRowColumn>
+        <TableRowColumn>{this.buildPlayButton(metadata)}</TableRowColumn>
+        <TableRowColumn>{name}</TableRowColumn>
+        <TableRowColumn>{artist}</TableRowColumn>
+        <TableRowColumn>{tags.map(this.buildChip)}</TableRowColumn>
       </TableRow>
     );
   }
@@ -58,8 +84,9 @@ class SongsSection extends React.Component {
         <TableHeader displaySelectAll={false} adjustForCheckbox={false}>
           <TableRow>
             <TableHeaderColumn></TableHeaderColumn>
-            <TableHeaderColumn tooltip="The Name">Name</TableHeaderColumn>
-            <TableHeaderColumn tooltip="The Artist">Artist</TableHeaderColumn>
+            <TableHeaderColumn>Name</TableHeaderColumn>
+            <TableHeaderColumn>Artist</TableHeaderColumn>
+            <TableHeaderColumn>Tags</TableHeaderColumn>
           </TableRow>
         </TableHeader>
         <TableBody displayRowCheckbox={false}>
