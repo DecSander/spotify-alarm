@@ -7,3 +7,10 @@ export function selectPlaylist(uuid) {
     uuid
   });
 }
+
+export function openDrawer(open) {
+  Dispatcher.dispatch({
+    type: ActionTypes.OPEN_DRAWER,
+    open
+  });
+}

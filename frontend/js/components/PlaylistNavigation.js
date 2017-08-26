@@ -3,14 +3,16 @@ import RaisedButton from 'material-ui/RaisedButton';
 import Drawer from 'material-ui/Drawer';
 import { ListItem } from 'material-ui/List';
 import ArrowDown from 'material-ui/svg-icons/hardware/keyboard-arrow-down';
+import NavigationClose from 'material-ui/svg-icons/navigation/close';
 import autobind from 'react-autobind';
 
-import { selectPlaylist } from 'actions/ActionCreator';
+import { selectPlaylist, openDrawer } from 'actions/ActionCreator';
 import NavStore from 'stores/NavStore';
 
 function getStateFromStore() {
   return {
-    playlist: NavStore.getSelectedPlaylist()
+    playlist: NavStore.getSelectedPlaylist(),
+    open: NavStore.getDrawerOpen()
   }
 }
 
@@ -22,7 +24,8 @@ class PlaylistNavigation extends React.Component {
 
     this.state = {
       tree: {},
-      playlist: ''
+      playlist: '',
+      open: false
     }
 
     this.getTree()
@@ -60,7 +63,10 @@ class PlaylistNavigation extends React.Component {
 
   render() {
     return (
-      <Drawer open={true}>
+      <Drawer open={this.state.open}>
+        <ListItem onClick={() => openDrawer(false)} primaryText="Close Navigation" 
+          rightIcon={<NavigationClose />}
+        />
         {this.jsonToListItem(this.state.tree)}
       </Drawer>
     );

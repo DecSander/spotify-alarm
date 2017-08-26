@@ -47,6 +47,7 @@ class SongsSection extends React.Component {
   }
 
   getTracks() {
+    if (this.state.playlist === '') return;
     fetch(`/nodes/${this.state.playlist}/songs`)
       .then(res => res.json())
       .then(tracks => this.setState({tracks}))
