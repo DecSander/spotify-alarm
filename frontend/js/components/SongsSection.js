@@ -13,6 +13,15 @@ import IconButton from 'material-ui/IconButton';
 import Chip from 'material-ui/Chip';
 import { blue300 } from 'material-ui/styles/colors';
 
+import { selectPlaylist } from 'actions/ActionCreator';
+import NavStore from 'stores/NavStore';
+
+function getStateFromStore() {
+  return {
+    playlist: NavStore.getSelectedPlaylist()
+  }
+}
+
 class SongsSection extends React.Component {
 
   constructor(props) {
@@ -20,14 +29,25 @@ class SongsSection extends React.Component {
     autobind(this);
 
     this.state = {
-      tracks: []
+      tracks: [],
+      playlist: ''
     }
+  }
 
-    this.getTracks();
+  _onChange() {
+    this.setState(getStateFromStore(), this.getTracks);
+  }
+
+  componentDidMount() {
+    NavStore.addChangeListener(this._onChange);
+  }
+
+  componentWillUnmount() {
+    NavStore.removeChangeListener(this._onChange);
   }
 
   getTracks() {
-    fetch('/nodes/d64532c052644af891c4c2390680d5ca/songs')
+    fetch(`/nodes/${this.state.playlist}/songs`)
       .then(res => res.json())
       .then(tracks => this.setState({tracks}))
       .catch(console.error)
@@ -40,13 +60,14 @@ class SongsSection extends React.Component {
   }
 
   buildChip(tag) {
-    const { name } = tag;
+    const { name, uuid } = tag;
     const chipStyle = {
       margin: 4
     };
 
     return (
-      <Chip style={chipStyle} backgroundColor={blue300} onClick={() => {}}>
+      <Chip style={chipStyle} key={`chip-${uuid}`}
+        backgroundColor={blue300} onClick={() => selectPlaylist(uuid)}>
         {name}
       </Chip>
     );
@@ -55,7 +76,7 @@ class SongsSection extends React.Component {
   buildPlayButton(metadata) {
     const { uuid } = metadata;
     return (
-      <IconButton onClick={this.setPlay.bind(this, uuid)}>
+      <IconButton onClick={() => this.setPlay(uuid)}>
         <PlayButton />
       </IconButton>
     );
@@ -63,10 +84,10 @@ class SongsSection extends React.Component {
 
   jsonToTableEntry(obj) {
     const [metadata, tags] = obj;
-    const { name, artist } = metadata;
+    const { name, artist, uuid } = metadata;
 
     return (
-      <TableRow>
+      <TableRow key={`song-${uuid}`}>
         <TableRowColumn>{this.buildPlayButton(metadata)}</TableRowColumn>
         <TableRowColumn>{name}</TableRowColumn>
         <TableRowColumn>{artist}</TableRowColumn>

@@ -4,8 +4,8 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import AppBar from 'material-ui/AppBar';
 import IconButton from 'material-ui/IconButton';
 import NavigationClose from 'material-ui/svg-icons/navigation/close';
-import PlaylistNavigation from './PlaylistNavigation';
-import SongsSection from './SongsSection';
+import PlaylistNavigation from 'components/PlaylistNavigation';
+import SongsSection from 'components/SongsSection';
 
 const App = () => (
   <MuiThemeProvider>
