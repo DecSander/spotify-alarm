@@ -153,6 +153,23 @@ def get_iphone(headers):
 
     return device_selected
 
+@app.route('/devices')
+@spotify_auth
+def get_devices(spotify_token):
+    headers = {'Authorization': spotify_token}
+
+    r_devices = requests.get('https://api.spotify.com/v1/me/player/devices', headers=headers)
+    devices = r_devices.json()['devices']
+
+    ret = []
+    for device in devices:
+        ret.append({
+            'name': device['name'],
+            'id': device['id']
+        })
+
+    return json.dumps(ret)
+
 @app.route('/player')
 @spotify_auth
 def get_player_settings(spotify_token):
