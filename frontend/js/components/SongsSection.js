@@ -55,9 +55,13 @@ class SongsSection extends React.Component {
   }
 
   setPlay(song) {
+    var headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+
     fetch(`/play/${this.state.playlist}`, {
       method: 'put',
-      body: JSON.stringify({starts_width: song}),
+      headers: headers,
+      body: JSON.stringify({start_with: song}),
       credentials: 'include'
     }).catch(console.error);
   }
