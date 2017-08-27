@@ -48,13 +48,13 @@ class Node:
     def get_songs(self):
         songs = []
         for child in self.children:
-            songs += child.get_songs()
-
-        for song in songs:
-            song[1].append(self.to_meta_dict())
+            child_meta_dict = child.to_meta_dict();
+            for song in child.get_songs():
+                song[1].insert(0, child_meta_dict)
+                songs.append(song)
 
         for track in self.tracks:
-            songs.append((track.to_dict(), [self.to_meta_dict()]))
+            songs.append((track.to_dict(), []))
 
         return songs
 
