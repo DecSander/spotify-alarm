@@ -1,15 +1,15 @@
 #!/usr/bin/python
 
 from functools import wraps
-
-from flask import Flask, redirect, url_for, session, request, send_from_directory
-from flask_oauthlib.client import OAuth, OAuthException
-import requests
 import json
 import uuid
 
-from tree import Node, lookup_node, Track
+from flask import Flask, redirect, url_for, session, request, send_from_directory
+from flask_oauthlib.client import OAuth, OAuthException
+
 from decorators import getter, setter, mutator
+import spotify
+from tree import Node, lookup_node, Track
 
 SPOTIFY_APP_ID = '0ea32eb43e5c4e4c8eed99d75a73a7d3'
 SPOTIFY_APP_SECRET = '779ac802603542fd839d0be55fac6ac3'
@@ -19,8 +19,8 @@ app.debug = True
 app.secret_key = 'development'
 oauth = OAuth(app)
 
-spotify = oauth.remote_app(
-    'spotify',
+s_auth = oauth.remote_app(
+    's_auth',
     consumer_key=SPOTIFY_APP_ID,
     consumer_secret=SPOTIFY_APP_SECRET,
     # Change the scope to match whatever it us you need
@@ -37,17 +37,17 @@ spotify = oauth.remote_app(
 def index():
     return 'Hi!'
 
-@spotify.tokengetter
+@s_auth.tokengetter
 def get_spotify_token(token=None):
     return session.get('spotify_token')
 
 @app.route('/login')
 def login():
-    return spotify.authorize(callback=url_for('oauth_authorized',
+    return s_auth.authorize(callback=url_for('oauth_authorized',
         next=request.args.get('next') or request.referrer or None, _external=True))
 
 @app.route('/login/authorized')
-@spotify.authorized_handler
+@s_auth.authorized_handler
 def oauth_authorized(resp):
     next_url = request.args.get('next') or url_for('index')
     if resp is None:
@@ -74,14 +74,12 @@ def spotify_auth(f):
 def reset(headers):
     root = Node('All songs')
  
-    r_playlists = requests.get('https://api.spotify.com/v1/me/playlists', headers=headers)
-    playlists = r_playlists.json()['items']
-
+    playlists = spotify.get('https://api.spotify.com/v1/me/playlists', headers=headers)['items']
     for playlist in playlists:
         track_objs = []
         next_page = playlist['tracks']['href']
         while next_page is not None:
-            r_tracks = requests.get(next_page, headers=headers)
+            r_tracks = spotify.get(next_page, headers=headers)
             tracks = r_tracks.json()['items']
             for track in tracks:
                 track_obj = track['track']
@@ -144,8 +142,7 @@ def remove_track(root, uuid):
     return root
 
 def get_iphone(headers):
-    r_devices = requests.get('https://api.spotify.com/v1/me/player/devices', headers=headers)
-    devices = r_devices.json()['devices']
+    devices = spotify.get('https://api.spotify.com/v1/me/player/devices', headers=headers)['devices']
     if len(devices) == 0:
         raise Exception('no devices found')
     device_selected = None
@@ -160,8 +157,7 @@ def get_iphone(headers):
 @app.route('/devices')
 @spotify_auth
 def get_devices(headers):
-    r_devices = requests.get('https://api.spotify.com/v1/me/player/devices', headers=headers)
-    devices = r_devices.json()['devices']
+    devices = spotify.get('https://api.spotify.com/v1/me/player/devices', headers=headers)['devices']
 
     ret = []
     for device in devices:
@@ -175,9 +171,7 @@ def get_devices(headers):
 @app.route('/player')
 @spotify_auth
 def get_player_settings(headers):
-    r_get_player = requests.get('https://api.spotify.com/v1/me/player', headers=headers)
-    player_dict = r_get_player.json()
-
+    player_dict = spotify.get('https://api.spotify.com/v1/me/player', headers=headers)
     return json.dumps({
         'playing': player_dict['is_playing'],
         'shuffle': player_dict['shuffle_state'],
@@ -192,17 +186,16 @@ def get_player_settings(headers):
 def adjust_player_settings(headers):
     if 'playing' in request.json:
         if request.json['playing']:
-            requests.put('https://api.spotify.com/v1/me/player/play', headers=headers)
+            spotify.put('https://api.spotify.com/v1/me/player/play', headers=headers)
         else:
-            requests.put('https://api.spotify.com/v1/me/player/pause', headers=headers)
+            spotify.put('https://api.spotify.com/v1/me/player/pause', headers=headers)
 
     if 'shuffle' in request.json:
-        requests.put('https://api.spotify.com/v1/me/player/shuffle', params={'state': request.json['shuffle']}, headers=headers)
+        spotify.put('https://api.spotify.com/v1/me/player/shuffle', params={'state': request.json['shuffle']}, headers=headers)
 
     if 'device' in request.json:
         device_id = request.json['device']['id']
-        transfer_data = json.dumps({'device_ids': [device_id]})
-        requests.put('https://api.spotify.com/v1/me/player', data=transfer_data, headers=headers)
+        spotify.put('https://api.spotify.com/v1/me/player', data={'device_ids': [device_id]}, headers=headers)
 
     return 'Success'
 
@@ -230,8 +223,7 @@ def play_node(headers, root, uuid):
             break
 
     play_params = {'device_id': device_selected}
-    play_data = json.dumps(play_data_dict)
-    r_play = requests.put('https://api.spotify.com/v1/me/player/play', params=play_params, data=play_data, headers=headers)
+    spotify.put('https://api.spotify.com/v1/me/player/play', params=play_params, body=play_data_dict, headers=headers)
 
     return 'Success'
 
