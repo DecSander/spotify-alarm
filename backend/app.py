@@ -78,13 +78,17 @@ def reset(spotify_token):
     playlists = r_playlists.json()['items']
 
     for playlist in playlists:
-        r_tracks = requests.get(playlist['tracks']['href'], headers=headers)
-        tracks = r_tracks.json()['items']
         track_objs = []
-        for track in tracks:
-            track_obj = track['track']
-            new_track = Track(uuid=track_obj['uri'], name=track_obj['name'], artist=track_obj['artists'][0]['name'])
-            track_objs.append(new_track)
+        next_page = playlist['tracks']['href']
+        while next_page is not None:
+            r_tracks = requests.get(next_page, headers=headers)
+            tracks = r_tracks.json()['items']
+            for track in tracks:
+                track_obj = track['track']
+                new_track = Track(uuid=track_obj['uri'], name=track_obj['name'], artist=track_obj['artists'][0]['name'])
+                track_objs.append(new_track)
+            next_page = r_tracks.json()['next']
+
         new_node = Node(name=playlist['name'], parent=root, tracks=track_objs)
 
     return root
