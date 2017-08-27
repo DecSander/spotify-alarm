@@ -14,7 +14,7 @@ var browserifyOpts =  {
     entries: 'js/App.js',
     debug: true,
     extensions: ['.js', '.jsx'],
-    paths: ['.']
+    paths: ['js']
 };
 
 var babelifyOpts = {
