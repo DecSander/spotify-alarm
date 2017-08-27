@@ -199,6 +199,18 @@ def adjust_player_settings(headers):
 
     return 'Success'
 
+@app.route('/player/next', methods=['PUT'])
+@spotify_auth
+def play_next(headers):
+    spotify.post('https://api.spotify.com/v1/me/player/next', headers=headers)
+    return 'Success'
+
+@app.route('/player/previous', methods=['PUT'])
+@spotify_auth
+def play_previous(headers):
+    spotify.post('https://api.spotify.com/v1/me/player/previous', headers=headers)
+    return 'Success'
+
 @app.route('/play/<uuid>', methods=['PUT'])
 @getter
 @spotify_auth
