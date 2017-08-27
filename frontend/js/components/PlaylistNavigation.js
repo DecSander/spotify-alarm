@@ -25,7 +25,7 @@ class PlaylistNavigation extends React.Component {
     this.state = {
       tree: {},
       playlist: '',
-      open: false
+      open: true
     }
 
     this.getTree()
@@ -55,7 +55,7 @@ class PlaylistNavigation extends React.Component {
   }
 
   getTree() {
-    fetch(`/nodes`)
+    fetch(`/nodes`, {credentials: 'include'})
       .then(res => res.json())
       .then(tree => this.setState({tree}))
       .catch(console.error)

@@ -48,15 +48,17 @@ class SongsSection extends React.Component {
 
   getTracks() {
     if (this.state.playlist === '') return;
-    fetch(`/nodes/${this.state.playlist}/songs`)
+    fetch(`/nodes/${this.state.playlist}/songs`, {credentials: 'include'})
       .then(res => res.json())
       .then(tracks => this.setState({tracks}))
       .catch(console.error)
   }
 
-  setPlay(uuid) {
-    fetch(`/tracks/${uuid}/play`, {
-      method: 'post'
+  setPlay(song) {
+    fetch(`/play/${this.state.playlist}`, {
+      method: 'put',
+      body: JSON.stringify({starts_width: song}),
+      credentials: 'include'
     }).catch(console.error);
   }
 
