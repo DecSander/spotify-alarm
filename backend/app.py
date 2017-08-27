@@ -63,15 +63,15 @@ def spotify_auth(f):
         spotify_token = get_spotify_token()
         if spotify_token is None:
             raise Exception('error getting spotify token')
-        kwargs['spotify_token'] = spotify_token
+        headers = {'Authorization': spotify_token}
+        kwargs['headers'] = headers
         return f(*args, **kwargs)
     return decorated_function
 
 @app.route('/resettree')
 @spotify_auth
 @setter
-def reset(spotify_token):
-    headers = {'Authorization': spotify_token}
+def reset(headers):
     root = Node('All songs')
  
     r_playlists = requests.get('https://api.spotify.com/v1/me/playlists', headers=headers)
@@ -159,9 +159,7 @@ def get_iphone(headers):
 
 @app.route('/devices')
 @spotify_auth
-def get_devices(spotify_token):
-    headers = {'Authorization': spotify_token}
-
+def get_devices(headers):
     r_devices = requests.get('https://api.spotify.com/v1/me/player/devices', headers=headers)
     devices = r_devices.json()['devices']
 
@@ -176,9 +174,7 @@ def get_devices(spotify_token):
 
 @app.route('/player')
 @spotify_auth
-def get_player_settings(spotify_token):
-    headers = {'Authorization': spotify_token}
-
+def get_player_settings(headers):
     r_get_player = requests.get('https://api.spotify.com/v1/me/player', headers=headers)
     player_dict = r_get_player.json()
 
@@ -193,9 +189,7 @@ def get_player_settings(spotify_token):
 
 @app.route('/player', methods=['PUT'])
 @spotify_auth
-def adjust_player_settings(spotify_token):
-    headers = {'Authorization': spotify_token}
-
+def adjust_player_settings(headers):
     if 'playing' in request.json:
         if request.json['playing']:
             requests.put('https://api.spotify.com/v1/me/player/play', headers=headers)
@@ -215,8 +209,7 @@ def adjust_player_settings(spotify_token):
 @app.route('/play/<uuid>', methods=['PUT'])
 @getter
 @spotify_auth
-def play_node(spotify_token, root, uuid):
-    headers = {'Authorization': spotify_token}
+def play_node(headers, root, uuid):
     device_selected = get_iphone(headers)
 
     track_ids = []
