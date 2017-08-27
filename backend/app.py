@@ -201,6 +201,11 @@ def adjust_player_settings(spotify_token):
     if 'shuffle' in request.json:
         requests.put('https://api.spotify.com/v1/me/player/shuffle', params={'state': request.json['shuffle']}, headers=headers)
 
+    if 'device' in request.json:
+        device_id = request.json['device']['id']
+        transfer_data = json.dumps({'device_ids': [device_id]})
+        requests.put('https://api.spotify.com/v1/me/player', data=transfer_data, headers=headers)
+
     return 'Success'
 
 @app.route('/play/<uuid>', methods=['PUT'])
