@@ -195,7 +195,7 @@ def adjust_player_settings(headers):
 
     if 'device' in request.json:
         device_id = request.json['device']['id']
-        spotify.put('https://api.spotify.com/v1/me/player', data={'device_ids': [device_id]}, headers=headers)
+        spotify.put('https://api.spotify.com/v1/me/player', body={'device_ids': [device_id]}, headers=headers)
 
     return 'Success'
 

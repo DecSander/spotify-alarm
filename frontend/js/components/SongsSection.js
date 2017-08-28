@@ -98,7 +98,7 @@ class SongsSection extends React.Component {
     const { name, artist, uuid } = metadata;
 
     return (
-      <TableRow key={`song-${uuid}`}>
+      <TableRow>
         <TableRowColumn>{this.buildPlayButton(metadata)}</TableRowColumn>
         <TableRowColumn>{name}</TableRowColumn>
         <TableRowColumn>{artist}</TableRowColumn>
