@@ -12,7 +12,7 @@ import NavStore from 'stores/NavStore';
 function getStateFromStore() {
   return {
     playlist: NavStore.getSelectedPlaylist(),
-    open: NavStore.getDrawerOpen()
+    open: NavStore.getDrawerOpen(),
   }
 }
 
@@ -57,7 +57,10 @@ class PlaylistNavigation extends React.Component {
   getTree() {
     fetch(`/nodes`, {credentials: 'include'})
       .then(res => res.json())
-      .then(tree => this.setState({tree}))
+      .then(tree => {
+        selectPlaylist(tree.uuid)
+        this.setState({tree});
+      })
       .catch(console.error)
   }
 

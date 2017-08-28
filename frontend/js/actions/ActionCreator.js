@@ -14,3 +14,10 @@ export function openDrawer(open) {
     open
   });
 }
+
+export function playerInfo(player) {
+  Dispatcher.dispatch({
+    type: ActionTypes.PLAYER_INFO,
+    player
+  });
+}

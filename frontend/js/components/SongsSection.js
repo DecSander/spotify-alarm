@@ -14,6 +14,7 @@ import Chip from 'material-ui/Chip';
 import { blue300 } from 'material-ui/styles/colors';
 
 import { selectPlaylist } from 'actions/ActionCreator';
+import DeviceSelector from 'components/DeviceSelector';
 import NavStore from 'stores/NavStore';
 
 function getStateFromStore() {
@@ -32,6 +33,8 @@ class SongsSection extends React.Component {
       tracks: [],
       playlist: ''
     }
+
+    this.lastPlaylist = '';
   }
 
   _onChange() {
@@ -47,7 +50,8 @@ class SongsSection extends React.Component {
   }
 
   getTracks() {
-    if (this.state.playlist === '') return;
+    if (this.state.playlist === '' || this.lastPlaylist === this.state.playlist) return;
+    this.lastPlaylist = this.state.playlist;
     fetch(`/nodes/${this.state.playlist}/songs`, {credentials: 'include'})
       .then(res => res.json())
       .then(tracks => this.setState({tracks}))
@@ -55,7 +59,7 @@ class SongsSection extends React.Component {
   }
 
   setPlay(song) {
-    var headers = new Headers();
+    let headers = new Headers();
     headers.append('Content-Type', 'application/json');
 
     fetch(`/play/${this.state.playlist}`, {
@@ -111,7 +115,7 @@ class SongsSection extends React.Component {
       <Table>
         <TableHeader displaySelectAll={false} adjustForCheckbox={false}>
           <TableRow>
-            <TableHeaderColumn></TableHeaderColumn>
+            <TableHeaderColumn><DeviceSelector /></TableHeaderColumn>
             <TableHeaderColumn>Name</TableHeaderColumn>
             <TableHeaderColumn>Artist</TableHeaderColumn>
             <TableHeaderColumn>Tags</TableHeaderColumn>

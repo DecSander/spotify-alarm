@@ -35,7 +35,7 @@ s_auth = oauth.remote_app(
 
 @app.route('/')
 def index():
-    return 'Hi!'
+    return redirect('/static/index.html')
 
 @s_auth.tokengetter
 def get_spotify_token(token=None):

@@ -6,6 +6,7 @@ import IconButton from 'material-ui/IconButton';
 import NavigationMenu from 'material-ui/svg-icons/navigation/menu';
 import PlaylistNavigation from 'components/PlaylistNavigation';
 import SongsSection from 'components/SongsSection';
+import Player from 'components/Player';
 
 import { openDrawer } from 'actions/ActionCreator';
 
@@ -18,6 +19,7 @@ const App = () => (
       />
       <PlaylistNavigation />
       <SongsSection />
+      <Player />
     </div>
   </MuiThemeProvider>
 );
